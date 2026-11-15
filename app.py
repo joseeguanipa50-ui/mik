@@ -23,9 +23,8 @@ def preguntar_a_gemini(texto_usuario, historial):
         return "Ups, mi llave secreta no está configurada."
 
     try:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"
-
-        # Estructura limpia de contenidos requerida por la API v1beta
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+        
         contents = []
         for turno in historial[-6:]:
             contents.append({
@@ -69,7 +68,6 @@ def preguntar_a_gemini(texto_usuario, historial):
     except Exception as e:
         print(f"ERROR CRITICO GEMINI: {str(e)}")
         return "Ups, parece que mi micrófono tuvo un pequeño fallo de conexión. ¿Me lo repites?"
-
 def formatear_voz_miku(texto):
     texto_limpio = texto.replace("&", "y").replace("<", "").replace(">", "").replace('"', "")
     return f'<speak><prosody pitch="+15%" rate="105%">{texto_limpio}</prosody></speak>'
