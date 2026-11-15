@@ -26,23 +26,45 @@ def preguntar_a_gemini(texto_usuario, historial):
         return "Ups, mi llave secreta no está configurada."
 
     try:
-        # Usamos el modelo estándar oficial de la librería
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        # CAMBIO CRUCIAL: Usamos la ruta oficial de producción 'v1'
+        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
         
-        # Unificamos el system prompt y el historial directamente en el texto
         prompt_completo = f"{SYSTEM_PROMPT}\n\nHistorial reciente:\n"
         for turno in historial[-4:]:
             prompt_completo += f"{turno}\n"
         prompt_completo += f"Usuario: {texto_usuario}\nMiku:"
 
-        response = model.generate_content(prompt_completo)
-        
-        if response and response.text:
-            return response.text.strip()
+        payload = {
+            "contents": [
+                {
+                    "parts": [{"text": prompt_completo}]
+                }
+            ],
+            "generationConfig": {
+                "temperature": 0.8,
+                "maxOutputTokens": 220
+            }
+        }
+
+        data = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(
+            url,
+            data=data,
+            headers={"Content-Type": "application/json"},
+            method="POST"
+        )
+
+        with urllib.request.urlopen(req, timeout=10) as response:
+            res_data = json.loads(response.read().decode("utf-8"))
+            candidatos = res_data.get("candidates", [])
+            if candidatos:
+                partes = candidatos[0].get("content", {}).get("parts", [])
+                if partes:
+                    return partes[0].get("text", "").strip()
         
         return "¡Vaya, me quedé en blanco un segundo! ¿Me lo repites?"
     except Exception as e:
-        print(f"ERROR CRITICO SDK GEMINI: {str(e)}")
+        print(f"ERROR CRITICO HTTP GEMINI: {str(e)}")
         return "Ups, parece que mi micrófono tuvo un pequeño fallo de conexión. ¿Me lo repites?"
 def formatear_voz_miku(texto):
     texto_limpio = texto.replace("&", "y").replace("<", "").replace(">", "").replace('"', "")
