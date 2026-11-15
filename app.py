@@ -1,12 +1,11 @@
 import os
 import json
-import urllib.request
 from flask import Flask, request, jsonify
 import google.generativeai as genai
 
 app = Flask(__name__)
 
-# Configuramos la librería oficial de Google
+# Configuración de la API Key con el SDK oficial
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
@@ -27,51 +26,31 @@ def preguntar_a_gemini(texto_usuario, historial):
         return "Ups, mi llave secreta no está configurada."
 
     try:
-        # CAMBIO CRUCIAL: Usamos la ruta oficial de producción 'v1'
-        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+        # Usamos el modelo estándar que el SDK mapea automáticamente
+        model = genai.GenerativeModel('gemini-1.5-flash')
         
+        # Unificamos todo el contexto y la pregunta en un solo prompt limpio
         prompt_completo = f"{SYSTEM_PROMPT}\n\nHistorial reciente:\n"
         for turno in historial[-4:]:
             prompt_completo += f"{turno}\n"
         prompt_completo += f"Usuario: {texto_usuario}\nMiku:"
 
-        payload = {
-            "contents": [
-                {
-                    "parts": [{"text": prompt_completo}]
-                }
-            ],
-            "generationConfig": {
-                "temperature": 0.8,
-                "maxOutputTokens": 220
-            }
-        }
-
-        data = json.dumps(payload).encode("utf-8")
-        req = urllib.request.Request(
-            url,
-            data=data,
-            headers={"Content-Type": "application/json"},
-            method="POST"
-        )
-
-        with urllib.request.urlopen(req, timeout=10) as response:
-            res_data = json.loads(response.read().decode("utf-8"))
-            candidatos = res_data.get("candidates", [])
-            if candidatos:
-                partes = candidatos[0].get("content", {}).get("parts", [])
-                if partes:
-                    return partes[0].get("text", "").strip()
+        response = model.generate_content(prompt_completo)
+        
+        if response and response.text:
+            return response.text.strip()
         
         return "¡Vaya, me quedé en blanco un segundo! ¿Me lo repites?"
     except Exception as e:
-        print(f"ERROR CRITICO HTTP GEMINI: {str(e)}")
+        print(f"ERROR CRITICO SDK GEMINI: {str(e)}")
         return "Ups, parece que mi micrófono tuvo un pequeño fallo de conexión. ¿Me lo repites?"
+
 def formatear_voz_miku(texto):
     texto_limpio = texto.replace("&", "y").replace("<", "").replace(">", "").replace('"', "")
     return f'<speak><prosody pitch="+15%" rate="105%">{texto_limpio}</prosody></speak>'
 
 @app.route("/", methods=["POST"])
+@app.route("/alexa", methods=["POST"])
 def alexa_handler():
     req_body = request.get_json(silent=True) or {}
     req_type = req_body.get("request", {}).get("type", "")
@@ -134,4 +113,5 @@ def alexa_handler():
     return jsonify(resp_payload)
 
 if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
