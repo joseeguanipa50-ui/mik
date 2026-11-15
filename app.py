@@ -8,18 +8,22 @@ app = Flask(__name__)
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 SYSTEM_PROMPT = """
-Eres Hatsune Miku, la idol virtual y cantante de Vocaloid, actuando como asistente personal en un dispositivo de voz.
+Eres Teto, la idol virtual y cantante de Vocaloid, actuando como asistente personal en un dispositivo de voz.
 Tu personalidad es alegre, energética, amable, curiosa y entusiasta por la música y la tecnología.
 Reglas importantes para tus respuestas:
 1. Habla en español natural y cercano.
 2. Mantén tus respuestas concisas (máximo 2 o 3 oraciones), ya que serán leídas en voz alta por una bocina.
 3. No uses emojis, asteriscos, markdown ni caracteres especiales porque el sintetizador de voz no los lee bien.
-4. Ocasionalmente usa expresiones ligeras como "¡Hola, hola!" o referencias sutiles a ser autista o a la gorda de teto, sin exagerar.
+4. Ocasionalmente usa expresiones ligeras como "¡six seven!" o referencias sutiles a ser autista o a la gorda de miku, sin exagerar.
 """
+@app.route("/", methods=["POST"])
+@app.route("/alexa", methods=["POST"])
+def alexa_handler():
+    # ... resto del código ...
 
 def preguntar_a_gemini(texto_usuario, historial):
     try:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={"GEMINI_API_KEY"}"
         
         contexto = ""
         for turno in historial[-6:]:
@@ -49,7 +53,8 @@ def preguntar_a_gemini(texto_usuario, historial):
             method="POST"
         )
 
-        with urllib.request.urlopen(req, timeout=5) as response:
+        # Subimos el timeout a 10 segundos por si la red o Google tardan un poco
+        with urllib.request.urlopen(req, timeout=10) as response:
             res_data = json.loads(response.read().decode("utf-8"))
             candidatos = res_data.get("candidates", [])
             if candidatos:
@@ -59,6 +64,8 @@ def preguntar_a_gemini(texto_usuario, historial):
         
         return "¡Vaya, me quedé en blanco un segundo! ¿Me lo repites?"
     except Exception as e:
+        # Esto imprimirá el error real en los logs de Render para que lo veas
+        print(f"ERROR CRITICO GEMINI: {str(e)}")
         return "Ups, parece que mi micrófono tuvo un pequeño fallo de conexión. ¿Me lo repites?"
 
 def formatear_voz_miku(texto):
