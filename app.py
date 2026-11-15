@@ -3,10 +3,6 @@ import json
 import urllib.request
 from flask import Flask, request, jsonify
 
-@app.route("/", methods=["POST"])
-@app.route("/alexa", methods=["POST"])
-def alexa_handler():
-
 app = Flask(__name__)
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
