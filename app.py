@@ -1,20 +1,23 @@
 import os
 import json
-import urllib.request
 from flask import Flask, request, jsonify
+import google.generativeai as genai
 
 app = Flask(__name__)
 
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+# Configuramos la librería oficial de Google
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
 
 SYSTEM_PROMPT = """
-Eres Teto, la idol virtual y cantante de Vocaloid, actuando como asistente personal en un dispositivo de voz.
+Eres Hatsune Miku, la idol virtual y cantante de Vocaloid, actuando como asistente personal en un dispositivo de voz.
 Tu personalidad es alegre, energética, amable, curiosa y entusiasta por la música y la tecnología.
 Reglas importantes para tus respuestas:
 1. Habla en español natural y cercano.
 2. Mantén tus respuestas concisas (máximo 2 o 3 oraciones), ya que serán leídas en voz alta por una bocina.
 3. No uses emojis, asteriscos, markdown ni caracteres especiales porque el sintetizador de voz no los lee bien.
-4. Ocasionalmente usa expresiones ligeras como "¡six seven!" o referencias sutiles a ser autista o a la gorda de miku, sin exagerar.
+4. Ocasionalmente usa expresiones ligeras como "¡Hola, hola!" o referencias sutiles a ser autista o a la gorda de teto, sin exagerar.
 """
 
 def preguntar_a_gemini(texto_usuario, historial):
@@ -23,46 +26,29 @@ def preguntar_a_gemini(texto_usuario, historial):
         return "Ups, mi llave secreta no está configurada."
 
     try:
-        # Usamos el modelo estándar de texto 'gemini-pro' que es ultra compatible
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"
-        
-        # Unificamos el prompt del sistema y el historial de forma limpia
-        contexto_completo = SYSTEM_PROMPT + "\n\nHistorial de conversación:\n"
-        for turno in historial[-6:]:
-            contexto_completo += f"{turno}\n"
-        contexto_completo += f"Usuario: {texto_usuario}\nMiku:"
-
-        payload = {
-            "contents": [
-                {
-                    "parts": [{"text": contexto_completo}]
-                }
-            ],
-            "generationConfig": {
-                "temperature": 0.8,
-                "maxOutputTokens": 220
-            }
-        }
-
-        data = json.dumps(payload).encode("utf-8")
-        req = urllib.request.Request(
-            url,
-            data=data,
-            headers={"Content-Type": "application/json"},
-            method="POST"
+        # Usamos el modelo oficial recomendado por la librería de Google
+        model = genai.GenerativeModel(
+            model_name="gemini-1.5-flash",
+            system_instruction=SYSTEM_PROMPT
         )
+        
+        # Construimos el historial para el chat
+        chat_history = []
+        for turno in historial[-6:]:
+            if "Usuario:" in turno:
+                chat_history.append({"role": "user", "parts": [turno.replace("Usuario:", "").strip()]})
+            elif "Miku:" in turno:
+                chat_history.append({"role": "model", "parts": [turno.replace("Miku:", "").strip()]})
 
-        with urllib.request.urlopen(req, timeout=10) as response:
-            res_data = json.loads(response.read().decode("utf-8"))
-            candidatos = res_data.get("candidates", [])
-            if candidatos:
-                partes = candidatos[0].get("content", {}).get("parts", [])
-                if partes:
-                    return partes[0].get("text", "").strip()
+        chat = model.start_chat(history=chat_history)
+        response = chat.send_message(texto_usuario)
+        
+        if response and response.text:
+            return response.text.strip()
         
         return "¡Vaya, me quedé en blanco un segundo! ¿Me lo repites?"
     except Exception as e:
-        print(f"ERROR CRITICO GEMINI: {str(e)}")
+        print(f"ERROR CRITICO SDK GEMINI: {str(e)}")
         return "Ups, parece que mi micrófono tuvo un pequeño fallo de conexión. ¿Me lo repites?"
 def formatear_voz_miku(texto):
     texto_limpio = texto.replace("&", "y").replace("<", "").replace(">", "").replace('"', "")
