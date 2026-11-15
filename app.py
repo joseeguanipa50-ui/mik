@@ -1,3 +1,7 @@
+@app.route("/", methods=["POST"])
+@app.route("/alexa", methods=["POST"])
+def alexa_handler():
+
 import os
 import json
 import urllib.request
