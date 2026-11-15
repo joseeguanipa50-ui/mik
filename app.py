@@ -26,16 +26,16 @@ def preguntar_a_gemini(texto_usuario, historial):
         return "Ups, mi llave secreta no está configurada."
 
     try:
-        # Usamos el modelo estándar directito compatible con la librería oficial
-        model = genai.GenerativeModel('gemini-pro')
+        # Usamos el modelo estándar oficial de la librería
+        model = genai.GenerativeModel('gemini-1.5-flash')
         
-        # Unificamos el prompt del sistema y el contexto en un solo texto limpio para asegurar compatibilidad
-        prompt_total = f"{SYSTEM_PROMPT}\n\n"
+        # Unificamos el system prompt y el historial directamente en el texto
+        prompt_completo = f"{SYSTEM_PROMPT}\n\nHistorial reciente:\n"
         for turno in historial[-4:]:
-            prompt_total += f"{turno}\n"
-        prompt_total += f"Usuario: {texto_usuario}\nMiku:"
+            prompt_completo += f"{turno}\n"
+        prompt_completo += f"Usuario: {texto_usuario}\nMiku:"
 
-        response = model.generate_content(prompt_total)
+        response = model.generate_content(prompt_completo)
         
         if response and response.text:
             return response.text.strip()
