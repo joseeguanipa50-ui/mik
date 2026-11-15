@@ -26,22 +26,16 @@ def preguntar_a_gemini(texto_usuario, historial):
         return "Ups, mi llave secreta no está configurada."
 
     try:
-        # Usamos el modelo oficial recomendado por la librería de Google
-        model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
-            system_instruction=SYSTEM_PROMPT
-        )
+        # Usamos el modelo estándar directito compatible con la librería oficial
+        model = genai.GenerativeModel('gemini-pro')
         
-        # Construimos el historial para el chat
-        chat_history = []
-        for turno in historial[-6:]:
-            if "Usuario:" in turno:
-                chat_history.append({"role": "user", "parts": [turno.replace("Usuario:", "").strip()]})
-            elif "Miku:" in turno:
-                chat_history.append({"role": "model", "parts": [turno.replace("Miku:", "").strip()]})
+        # Unificamos el prompt del sistema y el contexto en un solo texto limpio para asegurar compatibilidad
+        prompt_total = f"{SYSTEM_PROMPT}\n\n"
+        for turno in historial[-4:]:
+            prompt_total += f"{turno}\n"
+        prompt_total += f"Usuario: {texto_usuario}\nMiku:"
 
-        chat = model.start_chat(history=chat_history)
-        response = chat.send_message(texto_usuario)
+        response = model.generate_content(prompt_total)
         
         if response and response.text:
             return response.text.strip()
