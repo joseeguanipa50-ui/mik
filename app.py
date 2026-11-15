@@ -23,25 +23,21 @@ def preguntar_a_gemini(texto_usuario, historial):
         return "Ups, mi llave secreta no está configurada."
 
     try:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+        # Usamos el modelo estándar de texto 'gemini-pro' que es ultra compatible
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"
         
-        contents = []
+        # Unificamos el prompt del sistema y el historial de forma limpia
+        contexto_completo = SYSTEM_PROMPT + "\n\nHistorial de conversación:\n"
         for turno in historial[-6:]:
-            contents.append({
-                "role": "user" if "Usuario" in turno else "model",
-                "parts": [{"text": turno}]
-            })
-        
-        contents.append({
-            "role": "user",
-            "parts": [{"text": texto_usuario}]
-        })
+            contexto_completo += f"{turno}\n"
+        contexto_completo += f"Usuario: {texto_usuario}\nMiku:"
 
         payload = {
-            "system_instruction": {
-                "parts": [{"text": SYSTEM_PROMPT}]
-            },
-            "contents": contents,
+            "contents": [
+                {
+                    "parts": [{"text": contexto_completo}]
+                }
+            ],
             "generationConfig": {
                 "temperature": 0.8,
                 "maxOutputTokens": 220
