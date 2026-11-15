@@ -23,7 +23,6 @@ def preguntar_a_gemini(texto_usuario, historial):
         return "Ups, mi llave secreta no está configurada."
 
     try:
-# Usamos gemini-1.5-flash con la ruta exacta comprobada
 url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"
 
         # Estructura limpia de contenidos requerida por la API v1beta
