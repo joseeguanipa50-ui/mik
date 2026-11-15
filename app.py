@@ -5,7 +5,7 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-GEMINI_API_KEY = os.environ.get("AQ.Ab8RN6Lrnqmy0PY_EKuYiXTiHDQZ2D2hf149AjuYQT_LaGUSMg")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 SYSTEM_PROMPT = """
 Eres Hatsune Miku, la idol virtual y cantante de Vocaloid, actuando como asistente personal en un dispositivo de voz.
@@ -19,7 +19,7 @@ Reglas importantes para tus respuestas:
 
 def preguntar_a_gemini(texto_usuario, historial):
     try:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={AQ.Ab8RN6Lrnqmy0PY_EKuYiXTiHDQZ2D2hf149AjuYQT_LaGUSMg}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
         
         contexto = ""
         for turno in historial[-6:]:
