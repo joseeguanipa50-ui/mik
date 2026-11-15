@@ -16,10 +16,6 @@ Reglas importantes para tus respuestas:
 3. No uses emojis, asteriscos, markdown ni caracteres especiales porque el sintetizador de voz no los lee bien.
 4. Ocasionalmente usa expresiones ligeras como "¡six seven!" o referencias sutiles a ser autista o a la gorda de miku, sin exagerar.
 """
-@app.route("/", methods=["POST"])
-@app.route("/alexa", methods=["POST"])
-def alexa_handler():
-    # ... resto del código ...
 
 def preguntar_a_gemini(texto_usuario, historial):
     try:
