@@ -18,23 +18,32 @@ Reglas importantes para tus respuestas:
 """
 
 def preguntar_a_gemini(texto_usuario, historial):
+    if not GEMINI_API_KEY:
+        print("ERROR: La API Key de Gemini está vacía.")
+        return "Ups, mi llave secreta no está configurada."
+
     try:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={"GEMINI_API_KEY"}"
+        # Usamos el modelo gemini-1.5-flash oficial
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
         
-        contexto = ""
+        # Estructura limpia de contenidos requerida por la API v1beta
+        contents = []
         for turno in historial[-6:]:
-            contexto += f"{turno}\n"
-        contexto += f"Usuario: {texto_usuario}\nMiku:"
+            contents.append({
+                "role": "user" if "Usuario" in turno else "model",
+                "parts": [{"text": turno}]
+            })
+        
+        contents.append({
+            "role": "user",
+            "parts": [{"text": texto_usuario}]
+        })
 
         payload = {
             "system_instruction": {
                 "parts": [{"text": SYSTEM_PROMPT}]
             },
-            "contents": [
-                {
-                    "parts": [{"text": contexto}]
-                }
-            ],
+            "contents": contents,
             "generationConfig": {
                 "temperature": 0.8,
                 "maxOutputTokens": 220
@@ -49,7 +58,6 @@ def preguntar_a_gemini(texto_usuario, historial):
             method="POST"
         )
 
-        # Subimos el timeout a 10 segundos por si la red o Google tardan un poco
         with urllib.request.urlopen(req, timeout=10) as response:
             res_data = json.loads(response.read().decode("utf-8"))
             candidatos = res_data.get("candidates", [])
@@ -60,7 +68,6 @@ def preguntar_a_gemini(texto_usuario, historial):
         
         return "¡Vaya, me quedé en blanco un segundo! ¿Me lo repites?"
     except Exception as e:
-        # Esto imprimirá el error real en los logs de Render para que lo veas
         print(f"ERROR CRITICO GEMINI: {str(e)}")
         return "Ups, parece que mi micrófono tuvo un pequeño fallo de conexión. ¿Me lo repites?"
 
